@@ -38,6 +38,7 @@ private:
 	void BuildGeometryBuffers();
 	void BuildFX();
 	void BuildVertexLayout();
+	void InitRenderStates(); //edit: 
 
 private:
 	ID3D11Buffer* mBoxVB;
@@ -58,6 +59,8 @@ private:
 	float mRadius;
 
 	POINT mLastMousePos;
+
+	ID3D11RasterizerState* mWireframeRS;	//edit: object wireframe
 };
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -95,6 +98,8 @@ BoxApp::BoxApp(HINSTANCE hInstance)
 
 BoxApp::~BoxApp()
 {
+	ReleaseCOM(mWireframeRS); // 
+
 	ReleaseCOM(mBoxVB);
 	ReleaseCOM(mBoxIB);
 	ReleaseCOM(mFX);
@@ -109,6 +114,7 @@ bool BoxApp::Init()
 	BuildGeometryBuffers();
 	BuildFX();
 	BuildVertexLayout();
+	InitRenderStates(); //edit: set method when build
 
 	return true;
 }
@@ -150,6 +156,8 @@ void BoxApp::DrawScene()
     UINT offset = 0;
     md3dImmediateContext->IASetVertexBuffers(0, 1, &mBoxVB, &stride, &offset);
 	md3dImmediateContext->IASetIndexBuffer(mBoxIB, DXGI_FORMAT_R32_UINT, 0);
+
+	md3dImmediateContext->RSSetState(mWireframeRS); //edit: bind our renderstate to the rasterizerstace of the rendering pipeline
 
 	// Set constants
 	XMMATRIX world = XMLoadFloat4x4(&mWorld);
@@ -220,15 +228,16 @@ void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
 void BoxApp::BuildGeometryBuffers()
 {
 	// Create vertex buffer
+	//edit: change the vertex position of x and z from the y higher than 0
     Vertex vertices[] =
     {
-		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), (const float*)&Colors::White   },
-		{ XMFLOAT3(-1.0f, +1.0f, -1.0f), (const float*)&Colors::Black   },
-		{ XMFLOAT3(+1.0f, +1.0f, -1.0f), (const float*)&Colors::Red     },
+		{ XMFLOAT3(-1.0f, -1.0f, -1.0f), (const float*)&Colors::White  },
+		{ XMFLOAT3(0.0f, +1.0f, 0.0f), (const float*)&Colors::Black   },
+		{ XMFLOAT3(0.0f, +1.0f, 0.0f), (const float*)&Colors::Red     },
 		{ XMFLOAT3(+1.0f, -1.0f, -1.0f), (const float*)&Colors::Green   },
 		{ XMFLOAT3(-1.0f, -1.0f, +1.0f), (const float*)&Colors::Blue    },
-		{ XMFLOAT3(-1.0f, +1.0f, +1.0f), (const float*)&Colors::Yellow  },
-		{ XMFLOAT3(+1.0f, +1.0f, +1.0f), (const float*)&Colors::Cyan    },
+		{ XMFLOAT3(0.0f, +1.0f, 0.0f), (const float*)&Colors::Yellow  },
+		{ XMFLOAT3(0.0f, +1.0f, 0.0f), (const float*)&Colors::Cyan    },
 		{ XMFLOAT3(+1.0f, -1.0f, +1.0f), (const float*)&Colors::Magenta }
     };
 
@@ -336,3 +345,14 @@ void BoxApp::BuildVertexLayout()
 		passDesc.IAInputSignatureSize, &mInputLayout));
 }
  
+// edit: method to redender the wireframe
+void BoxApp::InitRenderStates()
+{
+	D3D11_RASTERIZER_DESC wfd;										// wireframe description
+	ZeroMemory(&wfd, sizeof(D3D11_RASTERIZER_DESC));				// will initialized all the structures in our description, will be set to 0 or false
+	wfd.FillMode = D3D11_FILL_WIREFRAME;							// will render in a wireframe mode
+	wfd.CullMode = D3D11_CULL_NONE;									// 
+	wfd.DepthClipEnable = true;										// set to default value
+
+	md3dDevice->CreateRasterizerState(&wfd, &mWireframeRS);			// create wireframe
+}
