@@ -75,6 +75,8 @@ void Chessboard::solve(string &start, const int boardSize)
 	array<tuple<int, int, array<int, 8>>, 8 * 8> order;
 	order[0] = make_tuple(x0, y0, sortMoves(x0, y0, boardSize));
 
+	const int totalMoves = 8;
+
 	int n = 0;
 	while (n < boardSize * boardSize - 1)
 	{
@@ -83,7 +85,7 @@ void Chessboard::solve(string &start, const int boardSize)
 		int y = get<1>(order[n]);
 
 		bool ok = false;
-		for (int i = 0; i < boardSize; ++i)
+		for (int i = 0; i < totalMoves; ++i)
 		{
 			// set next move
 			int dx = moves[get<2>(order[n])[i]].first;
